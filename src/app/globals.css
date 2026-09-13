@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --background: #f1f1f4;
+  --foreground: #17171a;
+  --muted: #6c6c76;
+  --glass: rgb(255 255 255 / 0.62);
+  --hairline: rgb(0 0 0 / 0.07);
+  --glass-shadow: 0 8px 32px rgb(0 0 0 / 0.08);
+  /* System blue mais escuro em modo claro para passar o contraste AA; o escuro usa o tom original. */
+  --accent: #0069d9;
+  --positive: #1a7c4c;
+  --scrollbar: rgb(0 0 0 / 0.18);
+  --scrollbar-hover: rgb(0 0 0 / 0.34);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0b0b0d;
+  --foreground: #f2f2f5;
+  --muted: #97979f;
+  --glass: rgb(255 255 255 / 0.055);
+  --hairline: rgb(255 255 255 / 0.1);
+  --glass-shadow: 0 8px 32px rgb(0 0 0 / 0.45);
+  --accent: #0a84ff;
+  --positive: #4fbd85;
+  --scrollbar: rgb(255 255 255 / 0.16);
+  --scrollbar-hover: rgb(255 255 255 / 0.32);
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-color: var(--scrollbar);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-hover);
+}
+
+/* Declarar as duas propriedades padrão desativa o estilo acima no Chrome, por isso ficam só onde não há a versão -webkit-. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar) transparent;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-glass: var(--glass);
+  --color-hairline: var(--hairline);
+  --color-accent: var(--accent);
+  --color-positive: var(--positive);
+  --radius-glass: 20px;
+  --shadow-glass: var(--glass-shadow);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme-switching] * {
+    transition:
+      background-color 320ms ease,
+      border-color 320ms ease,
+      color 320ms ease;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

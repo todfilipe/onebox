@@ -1,0 +1,8 @@
+services:
+  onebox:
+    image: ghcr.io/todfilipe/onebox:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # Só em loopback: o reverse proxy termina o TLS e o Docker ignora o UFW
+      - "127.0.0.1:3000:3000"

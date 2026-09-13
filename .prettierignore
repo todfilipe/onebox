@@ -1,0 +1,11 @@
+# Artefactos de build e ficheiros gerados
+.next/
+out/
+build/
+next-env.d.ts
+package-lock.json
+src/types/database.ts
+
+# Documentação escrita à mão em português: o formatador não deve
+# reescrever estes ficheiros e criar ruído no histórico do git
+*.md

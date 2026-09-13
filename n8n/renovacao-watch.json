@@ -1,0 +1,114 @@
+{
+  "id": "OneBoxWatchRenew1",
+  "name": "OneBox · renovação do watch",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [1],
+              "triggerAtHour": 4,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "id": "1a2b3c4d-0011-4a01-9b01-aa01bb02cc03",
+      "name": "Toda a segunda as 4h"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "email_accounts",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "disconnected_at",
+              "condition": "is",
+              "keyValue": "null"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "id": "2b3c4d5e-1122-4b12-8c12-bb12cc23dd34",
+      "name": "Ler contas ativas",
+      "credentials": {
+        "supabaseApi": { "id": "SupabaseOneBox01", "name": "Supabase OneBox" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\n\nconst decrypt = (encrypted) => {\n  const key = Buffer.from($env.TOKEN_ENCRYPTION_KEY, 'base64');\n  const raw = Buffer.from(encrypted, 'base64');\n  const decipher = crypto.createDecipheriv('aes-256-gcm', key, raw.subarray(0, 12));\n  decipher.setAuthTag(raw.subarray(12, 28));\n  return Buffer.concat([decipher.update(raw.subarray(28)), decipher.final()]).toString('utf8');\n};\n\nconst asJson = (res) => (typeof res === 'string' ? JSON.parse(res) : res);\n\nconst results = [];\nfor (const item of $input.all()) {\n  const account = item.json;\n  try {\n    if (!account.access_token || !account.refresh_token) {\n      throw new Error('sem tokens guardados');\n    }\n\n    const tokenRes = asJson(await this.helpers.httpRequest({\n      method: 'POST',\n      url: 'https://oauth2.googleapis.com/token',\n      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },\n      body: 'client_id=' + encodeURIComponent($env.GOOGLE_CLIENT_ID) + '&client_secret=' + encodeURIComponent($env.GOOGLE_CLIENT_SECRET) + '&refresh_token=' + encodeURIComponent(decrypt(account.refresh_token)) + '&grant_type=refresh_token',\n    }));\n    const auth = { Authorization: 'Bearer ' + tokenRes.access_token };\n\n    const watch = asJson(await this.helpers.httpRequest({\n      method: 'POST',\n      url: 'https://gmail.googleapis.com/gmail/v1/users/me/watch',\n      headers: { ...auth, 'Content-Type': 'application/json' },\n      body: JSON.stringify({ topicName: $env.GMAIL_PUBSUB_TOPIC, labelIds: ['INBOX'] }),\n    }));\n\n    // O ponteiro so e reposto se ja estiver invalido; um reset cego saltava mensagens por processar.\n    let historyId = account.last_history_id;\n    if (historyId) {\n      try {\n        await this.helpers.httpRequest({\n          url: 'https://gmail.googleapis.com/gmail/v1/users/me/history',\n          qs: { startHistoryId: historyId, maxResults: 1 },\n          headers: auth,\n        });\n      } catch (error) {\n        // So um 404 prova que o ponteiro morreu; noutro erro qualquer mantem-se, renovar o watch e o que importa aqui.\n        if (error.status === 404) historyId = null;\n      }\n    }\n\n    results.push({ json: {\n      id: account.id,\n      email_gmail: account.email_gmail,\n      watch_expiration: new Date(Number(watch.expiration)).toISOString(),\n      last_history_id: historyId || String(watch.historyId),\n    } });\n  } catch (error) {\n    console.log('Renovacao falhou (' + account.email_gmail + '): ' + error.message);\n  }\n}\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "3c4d5e6f-2233-4c23-9d23-cc23dd34ee45",
+      "name": "Renovar watch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "email_accounts",
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "watch_expiration",
+              "fieldValue": "={{ $json.watch_expiration }}"
+            },
+            {
+              "fieldId": "last_history_id",
+              "fieldValue": "={{ $json.last_history_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [660, 0],
+      "id": "4d5e6f7a-3344-4d34-8e34-dd34ee45ff56",
+      "name": "Gravar renovacao",
+      "credentials": {
+        "supabaseApi": { "id": "SupabaseOneBox01", "name": "Supabase OneBox" }
+      }
+    }
+  ],
+  "connections": {
+    "Toda a segunda as 4h": {
+      "main": [[{ "node": "Ler contas ativas", "type": "main", "index": 0 }]]
+    },
+    "Ler contas ativas": {
+      "main": [[{ "node": "Renovar watch", "type": "main", "index": 0 }]]
+    },
+    "Renovar watch": {
+      "main": [[{ "node": "Gravar renovacao", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" }
+}

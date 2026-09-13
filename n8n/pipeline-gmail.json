@@ -1,0 +1,263 @@
+{
+  "id": "OneBoxGmailPipe1",
+  "name": "OneBox · pipeline Gmail",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "onebox-gmail",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "41ffd75f-308f-4206-ae78-09c91f4e1585",
+      "name": "Notificacao Pub/Sub",
+      "webhookId": "71111613-2428-4e6d-ac0a-6f87d13d7650"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst token = ($json.headers.authorization ?? '').replace(/^Bearer /i, '');\nconst [encodedHeader, encodedPayload, signature] = token.split('.');\nif (!signature) throw new Error('Pedido sem token OIDC do Pub/Sub');\n\nconst header = JSON.parse(Buffer.from(encodedHeader, 'base64url').toString());\nconst claims = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString());\n\nconst { keys } = await this.helpers.httpRequest({ url: 'https://www.googleapis.com/oauth2/v3/certs', json: true });\nconst jwk = keys.find((key) => key.kid === header.kid);\nconst signed =\n  header.alg === 'RS256' &&\n  jwk !== undefined &&\n  crypto.verify(\n    'RSA-SHA256',\n    Buffer.from(`${encodedHeader}.${encodedPayload}`),\n    crypto.createPublicKey({ key: jwk, format: 'jwk' }),\n    Buffer.from(signature, 'base64url'),\n  );\n\nconst trusted =\n  signed &&\n  ['https://accounts.google.com', 'accounts.google.com'].includes(claims.iss) &&\n  claims.aud === $env.PUBSUB_PUSH_AUDIENCE &&\n  claims.email === $env.PUBSUB_PUSH_SERVICE_ACCOUNT &&\n  claims.email_verified === true &&\n  claims.exp * 1000 > Date.now();\nif (!trusted) throw new Error('Token OIDC do Pub/Sub invalido');\n\nconst { emailAddress, historyId } = JSON.parse(Buffer.from($json.body.message.data, 'base64').toString());\nreturn { json: { emailAddress, historyId: String(historyId) } };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "id": "b7c1a9e2-5d33-4f10-9a61-0f4c2d8e7a01",
+      "name": "Descodificar notificacao"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "email_accounts",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email_gmail",
+              "condition": "eq",
+              "keyValue": "={{ $json.emailAddress }}"
+            },
+            {
+              "keyName": "disconnected_at",
+              "condition": "is",
+              "keyValue": "null"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [440, 0],
+      "id": "c3d2e1f0-7a88-4b52-8c14-2e9b6d5f3a02",
+      "name": "Procurar conta ativa",
+      "credentials": {
+        "supabaseApi": { "id": "SupabaseOneBox01", "name": "Supabase OneBox" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\n\nconst account = $input.first().json;\nconst notification = $('Descodificar notificacao').first().json;\n\nconst decrypt = (encrypted) => {\n  const key = Buffer.from($env.TOKEN_ENCRYPTION_KEY, 'base64');\n  const raw = Buffer.from(encrypted, 'base64');\n  const decipher = crypto.createDecipheriv('aes-256-gcm', key, raw.subarray(0, 12));\n  decipher.setAuthTag(raw.subarray(12, 28));\n  return Buffer.concat([decipher.update(raw.subarray(28)), decipher.final()]).toString('utf8');\n};\n\nconst asJson = (res) => (typeof res === 'string' ? JSON.parse(res) : res);\n\nconst tokenRes = asJson(await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://oauth2.googleapis.com/token',\n  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },\n  body: 'client_id=' + encodeURIComponent($env.GOOGLE_CLIENT_ID) + '&client_secret=' + encodeURIComponent($env.GOOGLE_CLIENT_SECRET) + '&refresh_token=' + encodeURIComponent(decrypt(account.refresh_token)) + '&grant_type=refresh_token',\n}));\nconst auth = { Authorization: 'Bearer ' + tokenRes.access_token };\n\nconst gmail = async (path, qs) => asJson(await this.helpers.httpRequest({ url: 'https://gmail.googleapis.com/gmail/v1/users/me/' + path, qs, headers: auth }));\n\nconst messageIds = new Set();\nlet newHistoryId = notification.historyId;\ntry {\n  let pageToken;\n  do {\n    const page = await gmail('history', { startHistoryId: account.last_history_id || notification.historyId, historyTypes: 'messageAdded', labelId: 'INBOX', pageToken });\n    for (const entry of page.history || []) {\n      for (const added of entry.messagesAdded || []) messageIds.add(added.message.id);\n    }\n    newHistoryId = page.historyId || newHistoryId;\n    pageToken = page.nextPageToken;\n  } while (pageToken);\n} catch (error) {\n  // 404: o last_history_id guardado ja e antigo de mais, resta continuar a partir do historyId da notificacao.\n  if (error.status !== 404) throw error;\n}\n\nconst decodeBody = (data) => Buffer.from(data, 'base64url').toString('utf8');\nconst findPart = (payload, mime) => {\n  if (payload.mimeType === mime && payload.body?.data) return payload.body.data;\n  for (const part of payload.parts || []) {\n    const found = findPart(part, mime);\n    if (found) return found;\n  }\n  return null;\n};\n\nconst items = [];\nfor (const id of messageIds) {\n  const msg = await gmail('messages/' + id, { format: 'full' });\n  // O filtro do history.list deixa escapar respostas enviadas na mesma conversa; a etiqueta da mensagem e que decide.\n  if (!(msg.labelIds || []).includes('INBOX')) continue;\n  const header = (name) => msg.payload.headers.find((h) => h.name.toLowerCase() === name)?.value ?? '';\n  const plain = findPart(msg.payload, 'text/plain');\n  const html = plain ? null : findPart(msg.payload, 'text/html');\n  const body = plain ? decodeBody(plain) : html ? decodeBody(html).replace(/<[^>]+>/g, ' ') : msg.snippet;\n  items.push({ json: {\n    account_id: account.id,\n    user_id: account.user_id,\n    gmail_message_id: msg.id,\n    sender: header('from'),\n    subject: header('subject'),\n    body,\n    received_at: new Date(Number(msg.internalDate)).toISOString(),\n    new_history_id: String(newHistoryId),\n  } });\n}\n\n// Sem mensagens novas continua a valer a pena avancar o ponteiro, senao um 404 deixava a conta presa no mesmo historyId.\nreturn items.length ? items : [{ json: { new_history_id: String(newHistoryId) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "id": "d4e3f2a1-8b99-4c63-9d25-3f0c7e6a4b03",
+      "name": "Buscar mensagens novas"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const email = $json;\nconst prompt = 'Es o assistente de triagem de uma inbox de email. Analisa o email seguinte e devolve JSON com tres campos: summary (resumo do email em portugues de Portugal, uma ou duas frases), suggested_reply (resposta sugerida em portugues de Portugal, pronta a enviar, adequada ao tom do email), category (alta, media ou baixa). Usa alta para emails urgentes, com pedidos de acao concretos, ou respostas a uma conversa em curso; baixa para newsletters, notificacoes automaticas e marketing; media para o resto.\\n\\nDe: ' + email.sender + '\\nAssunto: ' + email.subject + '\\n\\n' + String(email.body || '').slice(0, 8000);\n\nconst res = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',\n  headers: { 'x-goog-api-key': $env.GEMINI_API_KEY, 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    contents: [{ parts: [{ text: prompt }] }],\n    generationConfig: {\n      responseMimeType: 'application/json',\n      responseSchema: {\n        type: 'OBJECT',\n        properties: {\n          summary: { type: 'STRING' },\n          suggested_reply: { type: 'STRING' },\n          category: { type: 'STRING', enum: ['alta', 'media', 'baixa'] },\n        },\n        required: ['summary', 'suggested_reply', 'category'],\n      },\n    },\n  }),\n});\nconst parsed = typeof res === 'string' ? JSON.parse(res) : res;\nconst out = JSON.parse(parsed.candidates[0].content.parts[0].text);\nreturn { json: { ...email, ai_summary: out.summary, ai_suggested_reply: out.suggested_reply, ai_category: out.category } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 0],
+      "id": "f6a5b4c3-adbb-4e85-9f47-5b2e9a8c6d05",
+      "name": "Analisar com Gemini"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tem-mensagem",
+              "leftValue": "={{ $json.gmail_message_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [880, 0],
+      "id": "d0e9f8a7-eb44-4cc9-8d8b-9f6c3e2a0b09",
+      "name": "Ha mensagens novas?"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "category_rules",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "user_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Procurar conta ativa').first().json.user_id }}"
+            },
+            { "keyName": "enabled", "condition": "eq", "keyValue": "true" }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1320, 0],
+      "id": "a7b6c5d4-be11-4f96-8a58-6c3f0b9d7e06",
+      "name": "Ler regras ativas",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": { "id": "SupabaseOneBox01", "name": "Supabase OneBox" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const emails = $('Analisar com Gemini').all().map((item) => item.json);\nconst rules = $input.all().map((item) => item.json).filter((rule) => rule.condition_type);\n\nconst SPECIFICITY = { remetente: 0, dominio: 1, palavra_chave: 2 };\nconst senderAddress = (sender) => ((sender.match(/<(.+)>/) || [])[1] || sender).trim().toLowerCase();\nconst matches = (rule, email) => {\n  const value = rule.condition_value.trim().toLowerCase();\n  if (rule.condition_type === 'remetente') return senderAddress(email.sender) === value;\n  if (rule.condition_type === 'dominio') return senderAddress(email.sender).endsWith('@' + value);\n  return (email.subject || '').toLowerCase().includes(value);\n};\n\nreturn emails.map((email) => {\n  const winner = rules\n    .filter((rule) => matches(rule, email))\n    .sort((a, b) => SPECIFICITY[a.condition_type] - SPECIFICITY[b.condition_type] || (a.created_at < b.created_at ? -1 : 1))[0];\n  return { json: { ...email, category: winner ? winner.forced_category : email.ai_category } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 0],
+      "id": "b8c7d6e5-cf22-4aa7-9b69-7d4a1c0e8f07",
+      "name": "Aplicar regras do utilizador"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/emails",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "on_conflict", "value": "account_id,gmail_message_id" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Prefer", "value": "resolution=merge-duplicates" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ account_id: $json.account_id, gmail_message_id: $json.gmail_message_id, sender: $json.sender, subject: $json.subject, ai_summary: $json.ai_summary, ai_suggested_reply: $json.ai_suggested_reply, category: $json.category, received_at: $json.received_at }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 0],
+      "id": "c9d8e7f6-da33-4bb8-8c7a-8e5b2d1f9a08",
+      "name": "Gravar email",
+      "credentials": {
+        "supabaseApi": { "id": "SupabaseOneBox01", "name": "Supabase OneBox" }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "email_accounts",
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Procurar conta ativa').first().json.id }}"
+            }
+          ]
+        },
+        "dataToSend": "defineBelow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "last_history_id",
+              "fieldValue": "={{ $('Buscar mensagens novas').first().json.new_history_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1980, 0],
+      "id": "e5f4a3b2-9caa-4d74-8e36-4a1d8f7b5c04",
+      "name": "Atualizar last_history_id",
+      "credentials": {
+        "supabaseApi": { "id": "SupabaseOneBox01", "name": "Supabase OneBox" }
+      }
+    }
+  ],
+  "connections": {
+    "Notificacao Pub/Sub": {
+      "main": [
+        [{ "node": "Descodificar notificacao", "type": "main", "index": 0 }]
+      ]
+    },
+    "Descodificar notificacao": {
+      "main": [[{ "node": "Procurar conta ativa", "type": "main", "index": 0 }]]
+    },
+    "Procurar conta ativa": {
+      "main": [
+        [{ "node": "Buscar mensagens novas", "type": "main", "index": 0 }]
+      ]
+    },
+    "Buscar mensagens novas": {
+      "main": [[{ "node": "Ha mensagens novas?", "type": "main", "index": 0 }]]
+    },
+    "Ha mensagens novas?": {
+      "main": [
+        [{ "node": "Analisar com Gemini", "type": "main", "index": 0 }],
+        [{ "node": "Atualizar last_history_id", "type": "main", "index": 0 }]
+      ]
+    },
+    "Analisar com Gemini": {
+      "main": [[{ "node": "Ler regras ativas", "type": "main", "index": 0 }]]
+    },
+    "Ler regras ativas": {
+      "main": [
+        [{ "node": "Aplicar regras do utilizador", "type": "main", "index": 0 }]
+      ]
+    },
+    "Aplicar regras do utilizador": {
+      "main": [[{ "node": "Gravar email", "type": "main", "index": 0 }]]
+    },
+    "Gravar email": {
+      "main": [
+        [{ "node": "Atualizar last_history_id", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" }
+}

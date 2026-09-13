@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.github
+.env*
+!.env.example
+*.md
+docs
+deploy
+n8n
+supabase
+scripts
