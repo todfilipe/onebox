@@ -9,9 +9,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 # O cliente Supabase nasce no import, por isso o build precisa destes valores de mentira; os reais entram em runtime.
-ENV SUPABASE_URL=https://placeholder.supabase.co
-ENV SUPABASE_SERVICE_ROLE_KEY=placeholder
-RUN npm run build
+RUN SUPABASE_URL=https://placeholder.supabase.co SUPABASE_SERVICE_ROLE_KEY=placeholder npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
