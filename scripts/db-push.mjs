@@ -1,14 +1,17 @@
 import { spawnSync } from "node:child_process";
 
-process.loadEnvFile(".env.local");
+let args = ["supabase", "migration", "up", "--local"];
 
-const dbUrl = process.env.SUPABASE_DB_URL;
-if (!dbUrl) {
-  console.error("Falta SUPABASE_DB_URL no .env.local");
-  process.exit(1);
+if (process.argv.includes("--prod")) {
+  process.loadEnvFile(".env.local");
+  if (!process.env.SUPABASE_DB_URL) {
+    console.error("Falta SUPABASE_DB_URL no .env.local");
+    process.exit(1);
+  }
+  args = ["supabase", "db", "push", "--db-url", process.env.SUPABASE_DB_URL];
 }
 
-const result = spawnSync("npx", ["supabase", "db", "push", "--db-url", dbUrl], {
+const result = spawnSync("npx", args, {
   stdio: "inherit",
   shell: process.platform === "win32",
 });

@@ -1,29 +1,21 @@
 import { writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-process.loadEnvFile(".env.local");
+let target = ["--local"];
 
-const accessToken = process.env.SUPABASE_ACCESS_TOKEN;
-const supabaseUrl = process.env.SUPABASE_URL;
-if (!accessToken || !supabaseUrl) {
-  console.error("Faltam SUPABASE_ACCESS_TOKEN ou SUPABASE_URL no .env.local");
-  process.exit(1);
+if (process.argv.includes("--prod")) {
+  process.loadEnvFile(".env.local");
+  const { SUPABASE_ACCESS_TOKEN, SUPABASE_URL } = process.env;
+  if (!SUPABASE_ACCESS_TOKEN || !SUPABASE_URL) {
+    console.error("Faltam SUPABASE_ACCESS_TOKEN ou SUPABASE_URL no .env.local");
+    process.exit(1);
+  }
+  target = ["--project-id", new URL(SUPABASE_URL).hostname.split(".")[0]];
 }
-
-const projectId = new URL(supabaseUrl).hostname.split(".")[0];
 
 const result = spawnSync(
   "npx",
-  [
-    "supabase",
-    "gen",
-    "types",
-    "typescript",
-    "--project-id",
-    projectId,
-    "--schema",
-    "public",
-  ],
+  ["supabase", "gen", "types", "typescript", ...target, "--schema", "public"],
   {
     encoding: "utf8",
     shell: process.platform === "win32",
@@ -36,4 +28,4 @@ if (result.status !== 0) {
 }
 
 writeFileSync("src/types/database.ts", result.stdout);
-console.log(`Tipos gerados em src/types/database.ts (projeto ${projectId})`);
+console.log(`Tipos gerados em src/types/database.ts (${target.join(" ")})`);

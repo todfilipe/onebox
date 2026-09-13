@@ -2,13 +2,19 @@
   "name": "onebox",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:supabase": "node scripts/check-supabase.mjs",

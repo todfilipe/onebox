@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
@@ -12,6 +12,29 @@ export default defineConfig({
     },
   },
   test: {
-    setupFiles: ["./vitest.setup.ts"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          exclude: [...configDefaults.exclude, "**/*.integration.test.ts"],
+          env: {
+            SUPABASE_URL: "http://127.0.0.1:54321",
+            SUPABASE_SERVICE_ROLE_KEY: "service-role-de-teste",
+            SUPABASE_JWT_SECRET:
+              "segredo-jwt-de-teste-com-mais-de-32-caracteres",
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "integration",
+          include: ["src/**/*.integration.test.ts"],
+          setupFiles: ["./vitest.integration.setup.ts"],
+          fileParallelism: false,
+        },
+      },
+    ],
   },
 });

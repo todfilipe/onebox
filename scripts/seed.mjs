@@ -1,6 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
+import { localSupabaseEnv } from "./local-supabase.mjs";
 
-process.loadEnvFile(".env.local");
+if (process.argv.includes("--prod")) {
+  process.loadEnvFile(".env.local");
+} else {
+  Object.assign(process.env, localSupabaseEnv());
+}
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
