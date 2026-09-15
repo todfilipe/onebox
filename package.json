@@ -19,7 +19,7 @@
     "format:check": "prettier --check .",
     "check:supabase": "node scripts/check-supabase.mjs",
     "gen:types": "node scripts/gen-types.mjs",
-    "gen:readme-assets": "node scripts/generate-readme-assets.mjs",
+    "gen:readme-assets": "node scripts/readme-assets.mjs",
     "db:push": "node scripts/db-push.mjs",
     "seed": "node scripts/seed.mjs"
   },

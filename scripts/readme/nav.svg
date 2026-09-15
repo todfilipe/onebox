@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="112" viewBox="0 0 960 112" role="img" aria-labelledby="title">
+  <title id="title">OneBox</title>
+  <defs>
+    <filter id="lift" x="-5%" y="-60%" width="110%" height="260%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="{{glassShadow}}"/>
+    </filter>
+  </defs>
+  <rect x="16" y="16" width="928" height="56" rx="16" fill="{{bg}}" filter="url(#lift)"/>
+  <rect x="16.5" y="16.5" width="927" height="55" rx="15.5" fill="{{glass}}" stroke="{{hairline}}"/>
+  <image href="{{image:src/app/icon.png}}" x="28" y="24" width="40" height="40"/>
+  <g font-family="{{font}}">
+    <text x="76" y="50" font-size="17" font-weight="600" letter-spacing="-0.022em" fill="{{text}}">OneBox</text>
+    <text x="920" y="50" text-anchor="end" font-size="14" letter-spacing="-0.016em" fill="{{link}}">oneboxai.me</text>
+  </g>
+</svg>

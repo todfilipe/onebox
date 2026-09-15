@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Resposta sugerida e confirmação de envio</title>
+  <desc id="desc">Diálogo de edição da resposta sugerida pela IA para um email da Ana Figueiredo, com o rascunho já escrito e os ajustes de tom Mais formal, Mais curta, Mais simpática e Mais direta. Ao lado, um excerto do cartão que pede confirmação antes de enviar, com os botões Cancelar e Confirmar envio.</desc>
+  <defs>
+    <filter id="float" filterUnits="userSpaceOnUse" x="0" y="0" width="960" height="560">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="{{shadow}}"/>
+    </filter>
+    <filter id="floatSmall" filterUnits="userSpaceOnUse" x="0" y="0" width="960" height="560">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="{{shadow}}"/>
+    </filter>
+    <clipPath id="mainClip">
+      <rect x="344" y="78" width="560" height="405" rx="20"/>
+    </clipPath>
+    <clipPath id="proofClip">
+      <rect x="56" y="224" width="240" height="50" rx="20"/>
+    </clipPath>
+  </defs>
+  <rect width="960" height="560" rx="28" fill="{{bgAlt}}"/>
+
+  <rect x="336" y="70" width="576" height="421" rx="28" fill="{{bg}}" filter="url(#float)"/>
+  <rect x="336.5" y="70.5" width="575" height="420" rx="27.5" fill="none" stroke="{{hairline}}"/>
+  <g clip-path="url(#mainClip)">
+    <svg x="344" y="78" width="560" height="405" viewBox="6 6 1332 960">
+      <image href="{{image:docs/readme/shots/compose-{theme}.png}}" width="1344" height="972"/>
+    </svg>
+  </g>
+
+  <rect x="48" y="216" width="256" height="66" rx="28" fill="{{bg}}" filter="url(#floatSmall)"/>
+  <rect x="48.5" y="216.5" width="255" height="65" rx="27.5" fill="none" stroke="{{hairline}}"/>
+  <g clip-path="url(#proofClip)">
+    <svg x="56" y="224" width="240" height="50" viewBox="900 456 530 111">
+      <image href="{{image:docs/readme/shots/confirm-{theme}.png}}" width="1462" height="612"/>
+    </svg>
+  </g>
+
+  <g font-family="{{font}}" font-weight="400" letter-spacing="-0.006em" fill="{{secondary}}">
+    <text x="48" y="319" font-size="13">O primeiro toque em Enviar</text>
+    <text x="48" y="338" font-size="13">pede confirmação.</text>
+  </g>
+</svg>

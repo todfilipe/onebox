@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420" role="img" aria-labelledby="title desc">
+  <title id="title">Do email recebido ao resumo com importância</title>
+  <desc id="desc">Um email por ler, com remetente, assunto e linhas de corpo, liga-se a um resumo automático de uma linha com etiqueta de importância, no painel do OneBox.</desc>
+  <defs>
+    <filter id="float" filterUnits="userSpaceOnUse" x="0" y="0" width="960" height="420">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="{{shadow}}"/>
+    </filter>
+    <clipPath id="screen">
+      <rect x="56" y="148" width="560" height="200" rx="20"/>
+    </clipPath>
+  </defs>
+  <rect width="960" height="420" rx="28" fill="{{bg}}"/>
+
+  <text x="640" y="114" text-anchor="middle" font-family="{{font}}" font-size="13" letter-spacing="-0.006em" fill="{{secondary}}">Resumo e importância antes de abrires</text>
+  <path d="M640,128 L640,248" stroke="{{secondary}}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M656,248 L624,248" stroke="{{secondary}}" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <polygon points="624,248 634,243 634,253" fill="{{secondary}}"/>
+
+  <rect x="48" y="140" width="576" height="216" rx="28" fill="{{bgAlt}}" filter="url(#float)"/>
+  <rect x="48.5" y="140.5" width="575" height="215" rx="27.5" fill="none" stroke="{{hairline}}"/>
+  <image href="{{image:docs/readme/shots/panel-{theme}.png}}" x="56" y="148" width="560" height="200" clip-path="url(#screen)"/>
+
+  <rect x="656" y="146" width="256" height="204" rx="20" fill="{{bgAlt}}" stroke="{{hairline}}"/>
+  <g font-family="{{font}}" fill="{{text}}">
+    <text x="680" y="194" font-size="17" font-weight="600" letter-spacing="-0.022em">Marta Correia</text>
+    <text x="680" y="220" font-size="15" letter-spacing="-0.016em">Reunião de amanhã</text>
+    <text x="680" y="240" font-size="15" letter-spacing="-0.016em">antecipada para as 9h30</text>
+  </g>
+  <line x1="680" y1="253" x2="888" y2="253" stroke="{{hairline}}"/>
+  <g fill="{{hairline}}">
+    <rect x="680" y="266" width="208" height="7" rx="3.5"/>
+    <rect x="680" y="282" width="208" height="7" rx="3.5"/>
+    <rect x="680" y="298" width="208" height="7" rx="3.5"/>
+    <rect x="680" y="314" width="140" height="7" rx="3.5"/>
+  </g>
+</svg>

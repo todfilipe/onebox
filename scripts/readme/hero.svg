@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="580" viewBox="0 0 960 580" role="img" aria-labelledby="title desc">
+  <title id="title">A inbox do OneBox</title>
+  <desc id="desc">Inbox com emails das contas pessoal e trabalho numa só lista, com os filtros Todas as contas, Todos, Alta, Média e Baixa. Cada linha mostra a conta de origem, o remetente, o assunto, a etiqueta de importância e um resumo de uma linha.</desc>
+  <defs>
+    <filter id="float" filterUnits="userSpaceOnUse" x="0" y="0" width="960" height="580">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="{{shadow}}"/>
+    </filter>
+    <clipPath id="screen">
+      <rect x="56" y="48" width="848" height="434" rx="20"/>
+    </clipPath>
+  </defs>
+  <rect width="960" height="580" rx="28" fill="{{bg}}"/>
+  <rect x="48" y="40" width="864" height="450" rx="28" fill="{{bgAlt}}" filter="url(#float)"/>
+  <rect x="48.5" y="40.5" width="863" height="449" rx="27.5" fill="none" stroke="{{hairline}}"/>
+  <image href="{{image:docs/readme/shots/inbox-{theme}.png}}" x="56" y="48" width="848" height="434" clip-path="url(#screen)"/>
+</svg>
