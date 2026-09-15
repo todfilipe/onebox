@@ -168,24 +168,25 @@ function EmailRow({
         {!email.read_at && <span className="sr-only">Por ler</span>}
         <AccountBadge address={email.email_accounts.email_gmail} />
         <p
-          className={`shrink-0 truncate text-sm font-semibold ${
+          className={`truncate text-sm font-semibold ${
             compact ? "w-24" : "w-32 sm:w-44"
           }`}
         >
           {senderName(email.sender)}
         </p>
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        {/* Grelha e não flex: assunto e resumo encolhem até zero sem empurrar as etiquetas para cima da hora. */}
+        <div className="grid flex-1 grid-cols-[minmax(0,max-content)_auto_auto_minmax(0,1fr)] items-center">
           <p className="truncate text-sm">{email.subject ?? "(sem assunto)"}</p>
           {email.effective_category && (
             <CategoryPill category={email.effective_category} />
           )}
           {email.state && email.state !== "ativo" && (
-            <span className="shrink-0 rounded-full border border-hairline px-2 py-0.5 text-[11px] font-medium text-muted">
+            <span className="ml-2 rounded-full border border-hairline px-2 py-0.5 text-[11px] font-medium text-muted">
               {email.state === "arquivado" ? "Arquivado" : "Adiado"}
             </span>
           )}
           {!compact && (
-            <p className="hidden min-w-0 flex-1 truncate text-sm text-muted lg:block">
+            <p className="col-start-4 ml-2 hidden truncate text-sm text-muted lg:block">
               {email.ai_summary}
             </p>
           )}
@@ -201,11 +202,11 @@ function EmailRow({
           timeFormat={timeFormat}
         />
       ) : onUnarchive ? (
-        <span className="relative flex size-7 shrink-0 items-center justify-center">
+        <span className="relative flex h-7 min-w-7 shrink-0 items-center justify-end">
           <LocalTime
             iso={timeIso}
             format={timeFormat}
-            className="text-xs text-muted tabular-nums transition-opacity group-focus-within:opacity-0 group-hover:opacity-0"
+            className="text-xs whitespace-nowrap text-muted tabular-nums transition-opacity group-focus-within:opacity-0 group-hover:opacity-0"
           />
           <button
             type="button"
@@ -213,7 +214,7 @@ function EmailRow({
             disabled={pending}
             aria-label={actionLabel}
             title={actionLabel}
-            className="absolute inset-0 flex items-center justify-center rounded-full text-muted opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-hairline hover:text-foreground disabled:opacity-50"
+            className="absolute top-0 right-0 flex size-7 items-center justify-center rounded-full text-muted opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-hairline hover:text-foreground disabled:opacity-50"
           >
             <UnarchiveIcon />
           </button>
@@ -332,7 +333,7 @@ function CategoryPill({ category }: { category: EmailCategory }) {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.6 }}
         transition={{ type: "spring", stiffness: 320, damping: 24 }}
-        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${categoryStyles[category]}`}
+        className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${categoryStyles[category]}`}
       >
         {categoryLabels[category]}
       </motion.span>

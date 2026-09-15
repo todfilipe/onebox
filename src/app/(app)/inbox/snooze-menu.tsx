@@ -73,7 +73,7 @@ export function SnoozeMenu({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 320, damping: 26 }}
-              className={`absolute ${menuTop} right-0 z-20 w-60 rounded-2xl border border-hairline bg-glass p-1.5 shadow-glass backdrop-blur-2xl`}
+              className={`absolute ${menuTop} right-0 z-20 w-64 rounded-2xl border border-hairline bg-menu p-1.5 shadow-glass backdrop-blur-2xl`}
             >
               {options.map((option) => (
                 <button
@@ -81,7 +81,7 @@ export function SnoozeMenu({
                   type="button"
                   onClick={() => pick(option.until)}
                   disabled={pending}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-hairline disabled:opacity-50"
+                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm whitespace-nowrap transition-colors hover:bg-hairline disabled:opacity-50"
                 >
                   <span>{option.label}</span>
                   <span className="text-xs text-muted tabular-nums">

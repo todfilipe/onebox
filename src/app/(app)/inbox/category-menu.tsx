@@ -72,7 +72,7 @@ export function CategoryMenu({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ type: "spring", stiffness: 320, damping: 26 }}
-              className="absolute top-8 left-0 z-20 w-56 rounded-2xl border border-hairline bg-glass p-1.5 shadow-glass backdrop-blur-2xl"
+              className="absolute top-8 left-0 z-20 w-56 rounded-2xl border border-hairline bg-menu p-1.5 shadow-glass backdrop-blur-2xl"
             >
               {categories.map((option) => (
                 <button

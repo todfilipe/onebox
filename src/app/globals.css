@@ -6,6 +6,8 @@
   --foreground: #17171a;
   --muted: #6c6c76;
   --glass: rgb(255 255 255 / 0.62);
+  /* Os menus abrem por cima de cartões de vidro: quase opacos, para não haver vidro sobre vidro. */
+  --menu: rgb(255 255 255 / 0.9);
   --hairline: rgb(0 0 0 / 0.07);
   --glass-shadow: 0 8px 32px rgb(0 0 0 / 0.08);
   /* System blue mais escuro em modo claro para passar o contraste AA; o escuro usa o tom original. */
@@ -21,6 +23,7 @@
   --foreground: #f2f2f5;
   --muted: #97979f;
   --glass: rgb(255 255 255 / 0.055);
+  --menu: rgb(32 32 36 / 0.9);
   --hairline: rgb(255 255 255 / 0.1);
   --glass-shadow: 0 8px 32px rgb(0 0 0 / 0.45);
   --accent: #0a84ff;
@@ -63,6 +66,7 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-glass: var(--glass);
+  --color-menu: var(--menu);
   --color-hairline: var(--hairline);
   --color-accent: var(--accent);
   --color-positive: var(--positive);
