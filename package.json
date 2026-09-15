@@ -24,13 +24,13 @@
     "seed": "node scripts/seed.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.8",
+    "@supabase/supabase-js": "^2.116.0",
     "framer-motion": "^12.42.2",
-    "jose": "^6.2.4",
+    "jose": "^6.2.12",
     "next": "16.3.5",
     "next-auth": "^5.0.0-beta.32",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "server-only": "^0.0.1"
   },
   "overrides": {
@@ -48,7 +48,7 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
-    "supabase": "^2.109.1",
+    "supabase": "^2.117.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
