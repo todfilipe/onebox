@@ -88,8 +88,8 @@
   top: 0;
   z-index: 50;
   background: var(--glass-thin);
-  backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
 }
 
 /* Scroll edge effect: o conteúdo dissolve-se por baixo da barra, em vez de uma border-bottom. */
@@ -98,8 +98,8 @@
   position: absolute;
   inset: 100% 0 auto 0;
   height: 24px;
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   mask-image: linear-gradient(to bottom, #000, transparent);
   -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
   pointer-events: none;
